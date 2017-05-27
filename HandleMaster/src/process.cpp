@@ -8,10 +8,56 @@
 #include "sup.h"
 #include "drivers/cpuz/cpuz_driver.hpp"
 
-#define KPROCESS_DIRBASE   0x028
-#define EPROCESS_PID       0x180
-#define EPROCESS_LINKS     0x188
-#define EPROCESS_OBJ_TABLE 0x200
+PHANDLE_TABLE_ENTRY ExpLookupHandleTableEntryWin7(HANDLE_TABLE *HandleTable, ULONGLONG Handle)
+{
+  ULONGLONG v2;     // r8@2
+  ULONGLONG v3;     // rcx@2
+  ULONGLONG v4;     // r8@2
+  ULONGLONG result; // rax@4
+  ULONGLONG v6;     // [sp+8h] [bp+8h]@1
+
+  v6 = Handle;
+  v6 = Handle & 0xFFFFFFFC;
+  if(v6 >= HandleTable->NextHandleNeedingPool) {
+    result = 0i64;
+  } else {
+    v2 = HandleTable->TableCode;
+    v3 = HandleTable->TableCode & 3;
+    v4 = v2 - (ULONG)v3;
+    if((ULONG)v3) {
+      if((DWORD)v3 == 1)
+        result = process::read<ULONGLONG>((((Handle - (Handle & 0x3FF)) >> 7) + v4)) + 4 * (Handle & 0x3FF);
+      else
+        result = process::read<ULONGLONG>((PVOID)(process::read<ULONGLONG>((PVOID)(((((Handle - (Handle & 0x3FF)) >> 7) - (((Handle - (Handle & 0x3FF)) >> 7) & 0xFFF)) >> 9) + v4)) + (((Handle - (Handle & 0x3FF)) >> 7) & 0xFFF))) + 4 * (Handle & 0x3FF);
+    } else {
+      result = v4 + 4 * Handle;
+    }
+  }
+  return (PHANDLE_TABLE_ENTRY)result;
+}
+
+PHANDLE_TABLE_ENTRY ExpLookupHandleTableEntryWin8(HANDLE_TABLE *HandleTable, ULONGLONG Handle)
+{
+  ULONGLONG v2; // rdx@1
+  LONGLONG v3; // r8@2
+  ULONGLONG result; // rax@4
+
+  v2 = Handle & 0xFFFFFFFFFFFFFFFCui64;
+  if(v2 >= HandleTable->NextHandleNeedingPool) {
+    result = 0i64;
+  } else {
+    v3 = HandleTable->TableCode;
+    if(HandleTable->TableCode & 3) {
+      if((HandleTable->TableCode & 3) == 1)
+        result = process::read<ULONGLONG>(v3 + 8 * (v2 >> 10) - 1) + 4 * (v2 & 0x3FF);
+      else
+        result = process::read<ULONGLONG>(process::read<ULONGLONG>(v3 + 8 * (v2 >> 19) - 2) + 8 * ((v2 >> 10) & 0x1FF)) + 4 * (v2 & 0x3FF);
+    } else {
+      result = v3 + 4 * v2;
+    }
+  }
+  return (PHANDLE_TABLE_ENTRY)result;
+}
 
 namespace process
 {
@@ -152,40 +198,6 @@ namespace process
     return cpuz.write_physical_address(phys, buf, len);
   }
 
-  // 
-  // Lookup a handle on the provided handle table.
-  // Chages a lot for each Windows version (8, 8.1, 10, etc) 
-  // and even between builds. You can find it on your ntoskrnl.exe
-  // with the help of MS symbols.
-  // 
-  PHANDLE_TABLE_ENTRY ExpLookupHandleTableEntry(HANDLE_TABLE *HandleTable, ULONGLONG Handle)
-  {
-    ULONGLONG v2;     // r8@2
-    ULONGLONG v3;     // rcx@2
-    ULONGLONG v4;     // r8@2
-    ULONGLONG result; // rax@4
-    ULONGLONG v6;     // [sp+8h] [bp+8h]@1
-
-    v6 = Handle;
-    v6 = Handle & 0xFFFFFFFC;
-    if(v6 >= HandleTable->NextHandleNeedingPool) {
-      result = 0i64;
-    } else {
-      v2 = HandleTable->TableCode;
-      v3 = HandleTable->TableCode & 3;
-      v4 = v2 - (ULONG)v3;
-      if((ULONG)v3) {
-        if((DWORD)v3 == 1)
-          result = read<ULONGLONG>((PVOID)(((Handle - (Handle & 0x3FF)) >> 7) + v4)) + 4 * (Handle & 0x3FF);
-        else
-          result = read<ULONGLONG>((PVOID)(read<ULONGLONG>((PVOID)(((((Handle - (Handle & 0x3FF)) >> 7) - (((Handle - (Handle & 0x3FF)) >> 7) & 0xFFF)) >> 9) + v4)) + (((Handle - (Handle & 0x3FF)) >> 7) & 0xFFF))) + 4 * (Handle & 0x3FF);
-      } else {
-        result = v4 + 4 * Handle;
-      }
-    }
-    return (PHANDLE_TABLE_ENTRY)result;
-  }
-
   bool grant_handle_access(HANDLE handle, ACCESS_MASK access_rights)
   {
     // 
@@ -199,7 +211,7 @@ namespace process
     auto handle_table      = read<HANDLE_TABLE>(handle_table_addr);
 
     // Find the entry for the target handle
-    auto entry_addr = ExpLookupHandleTableEntry(&handle_table, (ULONGLONG)handle);
+    auto entry_addr = ExpLookupHandleTableEntryWin7(&handle_table, (ULONGLONG)handle);
 
     if(!entry_addr)
       return false;

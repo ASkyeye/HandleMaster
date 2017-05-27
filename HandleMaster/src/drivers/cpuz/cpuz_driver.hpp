@@ -23,7 +23,14 @@ public:
   bool unload();
 
   void unload_on_exit(bool enable) { unload_ = enable; }
-  
+
+  /**
+   *  \brief Read some control registers
+   */
+  std::uint64_t read_cr0();
+  std::uint64_t read_cr2();
+  std::uint64_t read_cr3();
+
   /**
    *  \brief Translates a linear (virtual) address into it's respective physical address.
    *

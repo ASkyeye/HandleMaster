@@ -16,16 +16,16 @@ namespace process
   bool read(PVOID base, PVOID buf, size_t len);
   bool write(PVOID base, PVOID buf, size_t len);
 
-  template<typename T> 
-  T read(PVOID base)
+  template<typename T, typename U>
+  T read(U base)
   {
     T temp = T{};
-    read(base, &temp, sizeof(T));
+    read((PVOID)base, &temp, sizeof(T));
     return temp;
   }
-  template<typename T> 
-  bool write(PVOID base, T value)
+  template<typename T, typename U>
+  bool write(U base, T value)
   {
-    return write(base, &value, sizeof(T));
+    return write((PVOID)base, &value, sizeof(T));
   }
 };
