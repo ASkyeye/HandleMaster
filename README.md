@@ -8,16 +8,17 @@ The idea is that you can open a handle with low access and then elevate its acce
 
 This bypasses some Anti-Cheats that use ObRegisterCallbacks to strip access rights from handles at creation time *cough* BattleEye *cough*
 
-### Currently only Win7 SP1 is supported!
+## Supported Windows Versions:
 
-I will add support for other versions later on. If you want to do it yourself here's what you need to find.
+- Windows 7 SP1  (6.1.7601)
+- Windows 8      (6.2.9200)
+- Windows 8.1    (6.3.9600)
+- Windows 10 TH1 (10.0.10240)
+- Windows 10 TH2 (10.0.10586)
+- Windows 10 Anniversary Update (10.0.14393)
+- Windows 10 Creators Update (10.0.15063)
 
-1. HANDLE_TABLE_ENTRY structure;
-2. HANDLE_TABLE structure;
-3. ExpLookupHandleTableEntry;
-4. Some kernel offsets (_KPROCESS::DirectoryTableBase, _EPROCESS::UniqueProcessId, _EPROCESS::ActiveProcessLinks, _EPROCESS::ObjectTable)
-
-Numers 1, 2 and 4 can be easily found with LiveKd (which you can download [from here](https://technet.microsoft.com/en-us/sysinternals/livekd.aspx)) and the Windows Debugging Tools.
+Any problems please let me know :)
 
 
 
