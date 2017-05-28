@@ -33,6 +33,9 @@
     <ClCompile Include="src\drivers\cpuz\cpuz_shellcode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\dyn_data.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\process.hpp">
@@ -51,6 +54,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\drivers\cpuz\cpuz_shellcode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\dyn_data.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

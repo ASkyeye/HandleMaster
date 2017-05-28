@@ -73,7 +73,7 @@ bool cpuz_driver::is_loaded()
       &obj_attr, &io_status, 0, OPEN_EXISTING);
 
     if(!NT_SUCCESS(status)) {
-      ULONG i = 4;
+      ULONG i = 10;
       do {
         status = NtOpenFile(
           &deviceHandle_, GENERIC_READ | GENERIC_WRITE | SYNCHRONIZE,

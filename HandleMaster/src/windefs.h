@@ -15,27 +15,13 @@
 typedef struct _EPROCESS *PEPROCESS;
 typedef struct _HANDLE_TABLE_ENTRY_INFO *PHANDLE_TABLE_ENTRY_INFO;
 typedef PVOID EX_PUSH_LOCK;
-
-#define KPROCESS_DIRBASE   0x028
-#define EPROCESS_PID       0x180
-#define EPROCESS_LINKS     0x188
-#define EPROCESS_OBJ_TABLE 0x200
+typedef struct _HANDLE_TABLE* PHANDLE_TABLE;
 
 typedef struct _HANDLE_TABLE_ENTRY
 {
-  union
-  {
-    PVOID Object;
-    ULONG ObAttributes;
-    PHANDLE_TABLE_ENTRY_INFO InfoTable;
-    ULONGLONG Value;
-  };
-  union
-  {
-    ULONGLONG GrantedAccess;
-    USHORT GrantedAccessIndex;
-    ULONG NextFreeTableEntry;
-  };
+  //This struct is incomplete, but we dont really care about the other fields
+  ULONGLONG Value;
+  ULONGLONG GrantedAccess : 25;
 } HANDLE_TABLE_ENTRY, *PHANDLE_TABLE_ENTRY;
 
 typedef struct _HANDLE_TABLE
@@ -62,46 +48,3 @@ typedef struct _HANDLE_TABLE
   ULONG NextHandleNeedingPool;
   ULONG HandleCountHighWatermark;
 } HANDLE_TABLE, *PHANDLE_TABLE;
-
-//#define SYSTEM_DIRBASE     0x1a7000
-//#define KPROCESS_DIRBASE   0x028
-//#define EPROCESS_PID       0x2e0
-//#define EPROCESS_LINKS     0x2e8
-//#define EPROCESS_OBJ_TABLE 0x408
-
-//typedef struct _HANDLE_TABLE_ENTRY
-//{
-//  union
-//  {
-//    PVOID Object;
-//    ULONG ObAttributes;
-//    PHANDLE_TABLE_ENTRY_INFO InfoTable;
-//    ULONGLONG Value;
-//  };
-//  union
-//  {
-//    ULONG_PTR HighValue;
-//    struct _HANDLE_TABLE_ENTRY* NextFreeHandleEntry;
-//    ULONGLONG LeafHandleValue;
-//    struct
-//    {
-//      ULONG GrantedAccess : 25;
-//      ULONG NoRightsUpgrade : 1;
-//      ULONG Spare : 6;
-//    };
-//  };
-//  ULONG TypeInfo;
-//} HANDLE_TABLE_ENTRY, *PHANDLE_TABLE_ENTRY;
-//
-//typedef struct _HANDLE_TABLE
-//{
-//  ULONG NextHandleNeedingPool;
-//  LONG ExtraInfoPages;
-//  LONG_PTR TableCode;
-//  PEPROCESS QuotaProcess;
-//  LIST_ENTRY HandleTableList;
-//  ULONG UniqueProcessId;
-//  ULONG Flags;
-//  EX_PUSH_LOCK HandleContentionEvent;
-//  EX_PUSH_LOCK HandleTableLock;
-//} HANDLE_TABLE, *PHANDLE_TABLE;

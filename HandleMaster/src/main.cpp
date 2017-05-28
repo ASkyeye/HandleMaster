@@ -1,13 +1,16 @@
 #include "windefs.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <VersionHelpers.h>
+
 #include "process.hpp"
+#include "dyn_data.hpp"
 
 int main()
 {
   try {
-    auto pid = process::find(L"notepad++.exe");
+    dyn_data::load_information();
+
+    auto pid = process::find(L"notepad.exe");
     
     if(!pid)
       throw std::runtime_error("Process not running");
@@ -55,9 +58,21 @@ int main()
     printf("CommandLine: %ws\n", buffer);
     
     CloseHandle(handle);
+  } catch(const unsupported_version& ex) {
+    fprintf(stderr, ex.what());
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Supported (tested) versions are:\n");
+    fprintf(stderr, " - Windows 7 SP1  (6.1.7601)\n");
+    fprintf(stderr, " - Windows 8      (6.2.9200)\n");
+    fprintf(stderr, " - Windows 8.1    (6.3.9600)\n");
+    fprintf(stderr, " - Windows 10 TH1 (10.0.10240)\n");
+    fprintf(stderr, " - Windows 10 TH2 (10.0.10586)\n");
+    fprintf(stderr, " - Windows 10 AU  (10.0.14393)\n");
+    fprintf(stderr, " - Windows 10 CU  (10.0.15063)\n");
+
   } catch(const std::exception& ex) {
-    fprintf(stderr, "%s\n", ex.what());
-    fprintf(stderr, "GetLastError: %X\n", GetLastError());
+    fprintf(stderr, ex.what());
+    fprintf(stderr, "\nGetLastError: %X\n", GetLastError());
   }
 
   getc(stdin);

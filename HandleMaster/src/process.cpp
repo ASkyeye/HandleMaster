@@ -6,23 +6,25 @@
 #include <stack>
 
 #include "sup.h"
+#include "dyn_data.hpp"
 #include "drivers/cpuz/cpuz_driver.hpp"
 
-PHANDLE_TABLE_ENTRY ExpLookupHandleTableEntryWin7(HANDLE_TABLE *HandleTable, ULONGLONG Handle)
+PHANDLE_TABLE_ENTRY ExpLookupHandleTableEntryWin7(PHANDLE_TABLE HandleTable, ULONGLONG Handle)
 {
   ULONGLONG v2;     // r8@2
   ULONGLONG v3;     // rcx@2
   ULONGLONG v4;     // r8@2
   ULONGLONG result; // rax@4
   ULONGLONG v6;     // [sp+8h] [bp+8h]@1
+  ULONGLONG table = (ULONGLONG)HandleTable;
 
   v6 = Handle;
   v6 = Handle & 0xFFFFFFFC;
-  if(v6 >= HandleTable->NextHandleNeedingPool) {
+  if(v6 >= *(DWORD*)(table + 92)) {
     result = 0i64;
   } else {
-    v2 = HandleTable->TableCode;
-    v3 = HandleTable->TableCode & 3;
+    v2 = (*(ULONGLONG*)table);
+    v3 = (*(ULONGLONG*)table) & 3i64;
     v4 = v2 - (ULONG)v3;
     if((ULONG)v3) {
       if((DWORD)v3 == 1)
@@ -36,22 +38,28 @@ PHANDLE_TABLE_ENTRY ExpLookupHandleTableEntryWin7(HANDLE_TABLE *HandleTable, ULO
   return (PHANDLE_TABLE_ENTRY)result;
 }
 
-PHANDLE_TABLE_ENTRY ExpLookupHandleTableEntryWin8(HANDLE_TABLE *HandleTable, ULONGLONG Handle)
+PHANDLE_TABLE_ENTRY ExpLookupHandleTableEntry(PHANDLE_TABLE HandleTable, ULONGLONG Handle)
 {
   ULONGLONG v2; // rdx@1
   LONGLONG v3; // r8@2
   ULONGLONG result; // rax@4
+  ULONGLONG v5;
+
+  ULONGLONG a1 = (ULONGLONG)HandleTable;
 
   v2 = Handle & 0xFFFFFFFFFFFFFFFCui64;
-  if(v2 >= HandleTable->NextHandleNeedingPool) {
+  if(v2 >= *(DWORD*)a1) {
     result = 0i64;
   } else {
-    v3 = HandleTable->TableCode;
-    if(HandleTable->TableCode & 3) {
-      if((HandleTable->TableCode & 3) == 1)
-        result = process::read<ULONGLONG>(v3 + 8 * (v2 >> 10) - 1) + 4 * (v2 & 0x3FF);
-      else
-        result = process::read<ULONGLONG>(process::read<ULONGLONG>(v3 + 8 * (v2 >> 19) - 2) + 8 * ((v2 >> 10) & 0x1FF)) + 4 * (v2 & 0x3FF);
+    v3 = *(ULONGLONG*)(a1 + 8);
+    if(*(ULONGLONG*)(a1 + 8) & 3) {
+      if((*(DWORD*)(a1 + 8) & 3) == 1) {
+        v5 = process::read<ULONGLONG>(v3 + 8 * (v2 >> 10) - 1);
+        result = v5 + 4 * (v2 & 0x3FF);
+      } else {
+        v5 = process::read<ULONGLONG>(process::read<ULONGLONG>(v3 + 8 * (v2 >> 19) - 2) + 8 * ((v2 >> 10) & 0x1FF));
+        result = v5 + 4 * (v2 & 0x3FF);
+      }
     } else {
       result = v3 + 4 * v2;
     }
@@ -108,20 +116,20 @@ namespace process
       // Read EPROCESS address
       auto ntos_entry = cpuz.read_system_address<std::uint64_t>(peprocess);
 
-      auto list_head = ntos_entry + EPROCESS_LINKS;
+      auto list_head = ntos_entry + dyn_data::offset_process_links;
       auto last_link = cpuz.read_system_address<std::uint64_t>(list_head + sizeof(PVOID));
       auto cur_link  = list_head;
 
       // Iterate the kernel's linked list of processes
       do {
-        auto entry = (std::uint64_t)cur_link - EPROCESS_LINKS;
+        auto entry = (std::uint64_t)cur_link - dyn_data::offset_process_links;
 
-        auto unique_pid = cpuz.read_system_address<std::uint64_t>(entry + EPROCESS_PID);
+        auto unique_pid = cpuz.read_system_address<std::uint64_t>(entry + dyn_data::offset_process_id);
 
         // PID is a match
         if(unique_pid == pid) {
           info.pid          = pid;
-          info.dir_base     = cpuz.read_system_address<std::uint64_t>(entry + KPROCESS_DIRBASE);
+          info.dir_base     = cpuz.read_system_address<std::uint64_t>(entry + dyn_data::offset_directorytable);
           info.kernel_entry = entry;
           break;
         }
@@ -206,23 +214,22 @@ namespace process
     if(cur_context == nullptr)
       throw std::runtime_error{ "Not attached to a process." };
 
-    // Grab the handle table
-    auto handle_table_addr = read<PHANDLE_TABLE>(PVOID(cur_context->kernel_entry + EPROCESS_OBJ_TABLE));
+    auto handle_table_addr = read<PHANDLE_TABLE>(PVOID(cur_context->kernel_entry + dyn_data::offset_object_table));
     auto handle_table      = read<HANDLE_TABLE>(handle_table_addr);
+    auto entry_addr        = PHANDLE_TABLE_ENTRY{ nullptr };
 
-    // Find the entry for the target handle
-    auto entry_addr = ExpLookupHandleTableEntryWin7(&handle_table, (ULONGLONG)handle);
+    if(dyn_data::os_version == win7_sp1) {
+      entry_addr = ExpLookupHandleTableEntryWin7(&handle_table, (ULONGLONG)handle);
+      if(!entry_addr)
+        return false;
+    } else {
+      entry_addr = ExpLookupHandleTableEntry(&handle_table, (ULONGLONG)handle);
+      if(!entry_addr)
+        return false;
+    }
 
-    if(!entry_addr)
-      return false;
-
-    // Read it
     auto entry = read<HANDLE_TABLE_ENTRY>(entry_addr);
-
-    // Set the access
     entry.GrantedAccess = access_rights;
-
-    // Write it back
     return write<HANDLE_TABLE_ENTRY>(entry_addr, entry);
   }
 }
