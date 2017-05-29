@@ -10,6 +10,10 @@
 #define LODWORD(l)       ((DWORD)(((DWORD_PTR)(l)) & 0xffffffff))
 #define HIDWORD(l)       ((DWORD)((((DWORD_PTR)(l)) >> 32) & 0xffffffff))
 
+#define IOCTL_READ_CR 0x9C402428
+#define IOCTL_READ_MEM 0x9C402420
+#define IOCTL_WRITE_MEM 0x9C402430
+
 #pragma pack(push, 1)
 struct input_read_mem
 {
@@ -41,6 +45,9 @@ cpuz_driver::cpuz_driver()
 }
 cpuz_driver::~cpuz_driver()
 {
+  if(deviceHandle_ != INVALID_HANDLE_VALUE)
+    NtClose(deviceHandle_);
+  
   if(unload_ && is_loaded())
     unload();
 }
@@ -131,31 +138,29 @@ bool cpuz_driver::load()
 
 bool cpuz_driver::unload()
 {
-  HANDLE service;
+  if(deviceHandle_ != INVALID_HANDLE_VALUE)
+    NtClose(deviceHandle_);
 
-  if(ScmOpenServiceHandle(&service, L"cpuz141", SERVICE_STOP | DELETE)) {
-    if(!ScmStopService(service) && GetLastError() != ERROR_SERVICE_NOT_ACTIVE) {
-      ScmCloseServiceHandle(service);
+  if(serviceHandle_ != INVALID_HANDLE_VALUE) {
+    if(!ScmStopService(serviceHandle_) && GetLastError() != ERROR_SERVICE_NOT_ACTIVE) {
+      ScmCloseServiceHandle(serviceHandle_);
       return false;
     }
-    ScmDeleteService(service);
-    ScmCloseServiceHandle(service);
-
-    return true;
-
+    ScmDeleteService(serviceHandle_);
+    ScmCloseServiceHandle(serviceHandle_);
   }
-  return false;
+
+  return true;
 }
 
 std::uint64_t cpuz_driver::read_cr0()
 {
-  constexpr auto ioctl = 0x9C402428;
   auto io = 0ul;
 
   std::uint32_t control_register = 0;
   std::uint64_t value = 0;
 
-  if(!DeviceIoControl(deviceHandle_, ioctl, &control_register, sizeof(control_register), &value, sizeof(value), &io, nullptr))
+  if(!DeviceIoControl(deviceHandle_, IOCTL_READ_CR, &control_register, sizeof(control_register), &value, sizeof(value), &io, nullptr))
     throw std::runtime_error("Failed to read control register");
 
   return value;
@@ -260,7 +265,6 @@ std::uint64_t cpuz_driver::translate_linear_address(std::uint64_t directoryTable
 
 bool cpuz_driver::read_physical_address(std::uint64_t address, LPVOID buf, size_t len)
 {
-  constexpr auto ioctl = 0x9C402420;
   auto io = 0ul;
 
   input_read_mem in;
@@ -275,7 +279,7 @@ bool cpuz_driver::read_physical_address(std::uint64_t address, LPVOID buf, size_
   in.buffer_high  = HIDWORD(buf);
   in.buffer_low   = LODWORD(buf);
     
-  return !!DeviceIoControl(deviceHandle_, ioctl, &in, sizeof(in), &out, sizeof(out), &io, nullptr);
+  return !!DeviceIoControl(deviceHandle_, IOCTL_READ_MEM, &in, sizeof(in), &out, sizeof(out), &io, nullptr);
 }
 
 bool cpuz_driver::read_system_address(LPVOID address, LPVOID buf, size_t len)
@@ -294,7 +298,6 @@ bool cpuz_driver::write_physical_address(std::uint64_t address, LPVOID buf, size
   if(len % 4 != 0 || len == 0)
     throw std::runtime_error{ "The CPU-Z driver can only write lengths that are aligned to 4 bytes (4, 8, 12, 16, etc)" };
 
-  constexpr auto ioctl = 0x9C402430;
   auto io = 0ul;
 
   input_write_mem in;
@@ -308,13 +311,13 @@ bool cpuz_driver::write_physical_address(std::uint64_t address, LPVOID buf, size
     in.address_low  = LODWORD(address);
     in.value        = *(std::uint32_t*)buf;
 
-    return !!DeviceIoControl(deviceHandle_, ioctl, &in, sizeof(in), &out, sizeof(out), &io, nullptr);
+    return !!DeviceIoControl(deviceHandle_, IOCTL_WRITE_MEM, &in, sizeof(in), &out, sizeof(out), &io, nullptr);
   } else {
     for(auto i = 0; i < len / 4; i++) {
       in.address_high = HIDWORD(address + 4 * i);
       in.address_low  = LODWORD(address + 4 * i);
       in.value = ((std::uint32_t*)buf)[i];
-      if(!DeviceIoControl(deviceHandle_, ioctl, &in, sizeof(in), &out, sizeof(out), &io, nullptr))
+      if(!DeviceIoControl(deviceHandle_, IOCTL_WRITE_MEM, &in, sizeof(in), &out, sizeof(out), &io, nullptr))
         return false;
     }
     return true;
