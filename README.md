@@ -8,6 +8,10 @@ The idea is that you can open a handle with low access and then elevate its acce
 
 This bypasses some Anti-Cheats that use ObRegisterCallbacks to strip access rights from handles at creation time *cough* BattleEye *cough*
 
+## Processor:
+
+- HandleMaster currently only supports Intel processors due to the way address translation works. I plan to add support for AMD cpus in the near future (pull requests are welcome though).
+
 ## Supported Windows Versions:
 
 - Windows 7 SP1  (6.1.7601)
