@@ -26,25 +26,5 @@ typedef struct _HANDLE_TABLE_ENTRY
 
 typedef struct _HANDLE_TABLE
 {
-  ULONGLONG TableCode;
-  PEPROCESS QuotaProcess;
-  PVOID UniqueProcessId;
-  EX_PUSH_LOCK HandleLock;
-  LIST_ENTRY HandleTableList;
-  EX_PUSH_LOCK HandleContentionEvent;
-  PVOID DebugInfo;
-  LONG ExtraInfoPages;
-  union
-  {
-    ULONG Flags;
-    struct
-    {
-      UCHAR StrictFIFO : 1;
-    };
-  };
-  ULONG FirstFreeHandle;
-  PHANDLE_TABLE_ENTRY LastFreeHandleEntry;
-  ULONG HandleCount;
-  ULONG NextHandleNeedingPool;
-  ULONG HandleCountHighWatermark;
+  CHAR fill[100];
 } HANDLE_TABLE, *PHANDLE_TABLE;
