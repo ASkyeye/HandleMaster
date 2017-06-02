@@ -51,18 +51,12 @@ namespace dyn_data
       switch(osvi.dwBuildNumber) {
       case 10240:
       case 10586:
+      case 14393:
         os_version = win10;
         offset_directorytable = 0x028;
         offset_process_id     = 0x2E8;
         offset_process_links  = 0x2F0;
         offset_object_table   = 0x418;
-        break;
-      case 14393:
-        os_version = win10_au;
-        offset_directorytable = 0x028;
-        offset_process_id = 0x2E0;
-        offset_process_links = 0x2E8;
-        offset_object_table = 0x418;
         break;
       case 15063:
         os_version = win10_cu;

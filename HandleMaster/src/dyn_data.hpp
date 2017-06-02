@@ -10,7 +10,6 @@ enum supported_versions
   win8         = 0x060200,
   win81        = 0x060300,
   win10        = 0x0A0000,
-  win10_au     = 0x0A0001,
   win10_cu     = 0x0A0002
 };
 
@@ -33,7 +32,6 @@ public:
 private:
   std::string message;
 };
-
 
 namespace dyn_data
 {
