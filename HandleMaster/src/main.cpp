@@ -70,6 +70,10 @@ int main()
     fprintf(stderr, " - Windows 10 AU  (10.0.14393)\n");
     fprintf(stderr, " - Windows 10 CU  (10.0.15063)\n");
 
+  } catch(const unsupported_processor& ex) {
+    fprintf(stderr, ex.what());
+    fprintf(stderr, "\n");
+    fprintf(stderr, "HandleMaster currently only supports Intel processors\n");
   } catch(const std::exception& ex) {
     fprintf(stderr, ex.what());
     fprintf(stderr, "\nGetLastError: %X\n", GetLastError());

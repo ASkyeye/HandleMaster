@@ -33,6 +33,26 @@ private:
   std::string message;
 };
 
+class unsupported_processor
+  : public std::exception
+{
+public:
+  unsupported_processor(const char* vendor)
+  {
+    char buf[128];
+    sprintf_s(buf, "Unsupported processor (Vendor: %s)", vendor);
+    message = std::string(buf, strlen(buf));
+  }
+
+  const char* what() const override
+  {
+    return message.data();
+  }
+
+private:
+  std::string message;
+};
+
 namespace dyn_data
 {
   void load_information();

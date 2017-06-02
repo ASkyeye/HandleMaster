@@ -14,6 +14,20 @@ namespace dyn_data
     _Out_ PRTL_OSVERSIONINFOW lpVersionInformation
   );
 
+  void ensure_intel_cpud()
+  {
+    char buf[13] = "";
+    int reg[4];
+    __cpuid(reg, 0);
+    memcpy(buf, &reg[1], 4);
+    memcpy(buf + 4, &reg[3], 4);
+    memcpy(buf + 8, &reg[2], 4);
+    buf[12] = 0;
+
+    if(strcmp("GenuineIntel", buf) != 0)
+      throw unsupported_processor(buf);
+  }
+
   void load_information()
   {
     static auto RtlGetVersion = (RtlGetVersion_t)GetProcAddress(GetModuleHandle(TEXT("NTDLL")), "RtlGetVersion");
