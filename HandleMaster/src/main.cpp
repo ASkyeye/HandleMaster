@@ -8,6 +8,7 @@
 int main()
 {
   try {
+    dyn_data::ensure_intel_cpu();
     dyn_data::load_information();
 
     auto pid = process::find(L"notepad.exe");

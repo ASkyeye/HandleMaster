@@ -55,6 +55,7 @@ private:
 
 namespace dyn_data
 {
+  void ensure_intel_cpu();
   void load_information();
 
   extern std::uint32_t os_version;

@@ -14,7 +14,7 @@ namespace dyn_data
     _Out_ PRTL_OSVERSIONINFOW lpVersionInformation
   );
 
-  void ensure_intel_cpud()
+  void ensure_intel_cpu()
   {
     char buf[13] = "";
     int reg[4];
@@ -31,7 +31,7 @@ namespace dyn_data
   void load_information()
   {
     static auto RtlGetVersion = (RtlGetVersion_t)GetProcAddress(GetModuleHandle(TEXT("NTDLL")), "RtlGetVersion");
-
+    
     auto osvi = OSVERSIONINFOEXW{ sizeof(OSVERSIONINFOEXW) };
 
     RtlGetVersion((POSVERSIONINFOW)&osvi);
