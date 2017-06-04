@@ -173,7 +173,10 @@ namespace process
   void detach()
   {
     context_stack.pop();
-    cur_context = nullptr;
+    if(context_stack.size() > 0)
+      cur_context = &context_stack.top();
+    else
+      cur_context = nullptr;
   }
 
   bool read(PVOID base, PVOID buf, size_t len)
