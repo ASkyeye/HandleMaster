@@ -110,10 +110,9 @@ namespace process
       // 3. Read _KPROCESS:DirectoryTableBase;
       // 4. Profit.
 
-      // Get the pointer to the system EPROCESS
+      // Get the pointer to the system process
+      // This is a pointer to a EPROCESS object
       auto peprocess = find_kernel_proc("PsInitialSystemProcess");
-
-      // Read EPROCESS address
       auto ntos_entry = cpuz.read_system_address<std::uint64_t>(peprocess);
 
       auto list_head = ntos_entry + dyn_data::offset_process_links;
@@ -127,6 +126,8 @@ namespace process
         auto unique_pid = cpuz.read_system_address<std::uint64_t>(entry + dyn_data::offset_process_id);
 
         // PID is a match
+        // Read the directory table base for this process so we can use it later
+        // as well as the address for this EPROCESS entry
         if(unique_pid == pid) {
           info.pid          = pid;
           info.dir_base     = cpuz.read_system_address<std::uint64_t>(entry + dyn_data::offset_directorytable);
