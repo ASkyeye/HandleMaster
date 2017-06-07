@@ -10,8 +10,8 @@
 #define LODWORD(l)       ((DWORD)(((DWORD_PTR)(l)) & 0xffffffff))
 #define HIDWORD(l)       ((DWORD)((((DWORD_PTR)(l)) >> 32) & 0xffffffff))
 
-#define IOCTL_READ_CR 0x9C402428
-#define IOCTL_READ_MEM 0x9C402420
+#define IOCTL_READ_CR   0x9C402428
+#define IOCTL_READ_MEM  0x9C402420
 #define IOCTL_WRITE_MEM 0x9C402430
 
 #pragma pack(push, 1)
@@ -43,6 +43,7 @@ cpuz_driver::cpuz_driver()
   : deviceHandle_(INVALID_HANDLE_VALUE), serviceHandle_(INVALID_HANDLE_VALUE), unload_(false)
 {
 }
+
 cpuz_driver::~cpuz_driver()
 {
   if(deviceHandle_ != INVALID_HANDLE_VALUE)
@@ -155,12 +156,11 @@ bool cpuz_driver::unload()
 
 std::uint64_t cpuz_driver::read_cr0()
 {
-  auto io = 0ul;
+  auto io     = ULONG{ 0 };
+  auto cr     = std::uint32_t{ 0 };
+  auto value  = std::uint64_t{ 0 };
 
-  std::uint32_t control_register = 0;
-  std::uint64_t value = 0;
-
-  if(!DeviceIoControl(deviceHandle_, IOCTL_READ_CR, &control_register, sizeof(control_register), &value, sizeof(value), &io, nullptr))
+  if(!DeviceIoControl(deviceHandle_, IOCTL_READ_CR, &cr, sizeof(cr), &value, sizeof(value), &io, nullptr))
     throw std::runtime_error("Failed to read control register");
 
   return value;
@@ -168,13 +168,11 @@ std::uint64_t cpuz_driver::read_cr0()
 
 std::uint64_t cpuz_driver::read_cr2()
 {
-  constexpr auto ioctl = 0x9C402428;
-  auto io = 0ul;
+  auto io     = ULONG{ 0 };
+  auto cr     = std::uint32_t{ 2 };
+  auto value  = std::uint64_t{ 0 };
 
-  std::uint32_t control_register = 2;
-  std::uint64_t value = 0;
-
-  if(!DeviceIoControl(deviceHandle_, ioctl, &control_register, sizeof(control_register), &value, sizeof(value), &io, nullptr))
+  if(!DeviceIoControl(deviceHandle_, IOCTL_READ_CR, &cr, sizeof(cr), &value, sizeof(value), &io, nullptr))
     throw std::runtime_error("Failed to read control register");
 
   return value;
@@ -182,13 +180,11 @@ std::uint64_t cpuz_driver::read_cr2()
 
 std::uint64_t cpuz_driver::read_cr3()
 {
-  constexpr auto ioctl = 0x9C402428;
-  auto io = 0ul;
-
-  std::uint32_t control_register = 3;
-  std::uint64_t value = 0;
+  auto io     = ULONG{ 0 };
+  auto cr     = std::uint32_t{ 3 };
+  auto value  = std::uint64_t{ 0 };
   
-  if(!DeviceIoControl(deviceHandle_, ioctl, &control_register, sizeof(control_register), &value, sizeof(value), &io, nullptr))
+  if(!DeviceIoControl(deviceHandle_, IOCTL_READ_CR, &cr, sizeof(cr), &value, sizeof(value), &io, nullptr))
     throw std::runtime_error("Failed to read control register");
 
   return value;
@@ -265,10 +261,9 @@ std::uint64_t cpuz_driver::translate_linear_address(std::uint64_t directoryTable
 
 bool cpuz_driver::read_physical_address(std::uint64_t address, LPVOID buf, size_t len)
 {
-  auto io = 0ul;
-
-  input_read_mem in;
-  output out;
+  auto io  = ULONG{ 0 };
+  auto in  = input_read_mem{};
+  auto out = output{};
 
   if(address == 0 || buf == nullptr)
     return false;
@@ -298,10 +293,9 @@ bool cpuz_driver::write_physical_address(std::uint64_t address, LPVOID buf, size
   if(len % 4 != 0 || len == 0)
     throw std::runtime_error{ "The CPU-Z driver can only write lengths that are aligned to 4 bytes (4, 8, 12, 16, etc)" };
 
-  auto io = 0ul;
-
-  input_write_mem in;
-  output out;
+  auto io  = ULONG{ 0 };
+  auto in  = input_write_mem{};
+  auto out = output{};
 
   if(address == 0 || buf == nullptr)
     return false;
