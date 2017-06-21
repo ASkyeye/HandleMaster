@@ -10,7 +10,7 @@ This bypasses some Anti-Cheats that use ObRegisterCallbacks to strip access righ
 
 ## Processor:
 
-- HandleMaster currently only supports Intel processors due to the way address translation works. I plan to add support for AMD cpus in the near future (pull requests are welcome though).
+- HandleMaster currently only supports Intel processors due to the way address translation works.
 
 ## Supported Windows Versions:
 
