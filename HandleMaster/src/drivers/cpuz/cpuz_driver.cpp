@@ -74,7 +74,7 @@ bool cpuz_driver::is_loaded()
     NTSTATUS status;
 
     UNICODE_STRING    device_name = UNICODE_STRING{sizeof(CPUZ_DEVICE_NAME) - sizeof(WCHAR), sizeof(CPUZ_DEVICE_NAME), CPUZ_DEVICE_NAME};
-    OBJECT_ATTRIBUTES obj_attr    = OBJECT_ATTRIBUTES{ sizeof(OBJECT_ATTRIBUTES), NULL, &device_name, 0, NULL, NULL };
+    OBJECT_ATTRIBUTES obj_attr    = OBJECT_ATTRIBUTES{ sizeof(OBJECT_ATTRIBUTES), nullptr, &device_name, 0, nullptr, nullptr };
 
     status = NtOpenFile(
       &deviceHandle_, GENERIC_READ | GENERIC_WRITE | SYNCHRONIZE,
@@ -219,10 +219,10 @@ std::uint64_t cpuz_driver::translate_linear_address(std::uint64_t directoryTable
 
   //Check the PS bit
   if((PDPTE & (1 << 7)) != 0) {
-    // If the PDPTE’s PS flag is 1, the PDPTE maps a 1-GByte page. The
+    // If the PDPTEâ€™s PS flag is 1, the PDPTE maps a 1-GByte page. The
     // final physical address is computed as follows:
-    // — Bits 51:30 are from the PDPTE.
-    // — Bits 29:0 are from the original va address.
+    // â€” Bits 51:30 are from the PDPTE.
+    // â€” Bits 29:0 are from the original va address.
     return (PDPTE & 0xFFFFFC0000000) + (va & 0x3FFFFFFF);
   }
 
@@ -236,10 +236,10 @@ std::uint64_t cpuz_driver::translate_linear_address(std::uint64_t directoryTable
     return 0;
 
   if((PDE & (1 << 7)) != 0) {
-    // If the PDE’s PS flag is 1, the PDE maps a 2-MByte page. The
+    // If the PDEâ€™s PS flag is 1, the PDE maps a 2-MByte page. The
     // final physical address is computed as follows:
-    // — Bits 51:21 are from the PDE.
-    // — Bits 20:0 are from the original va address.
+    // â€” Bits 51:21 are from the PDE.
+    // â€” Bits 20:0 are from the original va address.
     return (PDE & 0xFFFFFFFE00000) + (va & 0x1FFFFF);
   }
 
@@ -254,8 +254,8 @@ std::uint64_t cpuz_driver::translate_linear_address(std::uint64_t directoryTable
   //
   // The PTE maps a 4-KByte page. The
   // final physical address is computed as follows:
-  // — Bits 51:12 are from the PTE.
-  // — Bits 11:0 are from the original va address.
+  // â€” Bits 51:12 are from the PTE.
+  // â€” Bits 11:0 are from the original va address.
   return (PTE & 0xFFFFFFFFFF000) + (va & 0xFFF);
 }
 
