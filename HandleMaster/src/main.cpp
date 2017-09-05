@@ -9,6 +9,11 @@ int main()
 {
   try {
     dyn_data::ensure_intel_cpu();
+  } catch(const unsupported_processor& ex) {
+    fprintf(stderr, "System is running with non-Intel processor. HandleMaster Might not work properly.\n");
+  }
+
+  try {
     dyn_data::load_information();
 
     auto pid = process::find(L"notepad.exe");
@@ -71,10 +76,6 @@ int main()
     fprintf(stderr, " - Windows 10 AU  (10.0.14393)\n");
     fprintf(stderr, " - Windows 10 CU  (10.0.15063)\n");
 
-  } catch(const unsupported_processor& ex) {
-    fprintf(stderr, ex.what());
-    fprintf(stderr, "\n");
-    fprintf(stderr, "HandleMaster currently only supports Intel processors\n");
   } catch(const std::exception& ex) {
     fprintf(stderr, ex.what());
     fprintf(stderr, "\nGetLastError: %X\n", GetLastError());
