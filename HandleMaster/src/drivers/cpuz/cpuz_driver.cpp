@@ -96,13 +96,13 @@ bool cpuz_driver::is_loaded()
 
 bool cpuz_driver::load()
 {
-  HANDLE service, file;
+  HANDLE service;
   ULONG io;
 
   if(!SupFileExists(CPUZ_FILE_NAME)) {
-    file = SupCreateFile(CPUZ_FILE_NAME, FILE_GENERIC_WRITE, 0, FILE_CREATE);
+    auto file = SupCreateFile(CPUZ_FILE_NAME, FILE_GENERIC_WRITE, 0, FILE_CREATE);
 
-    if(!WriteFile(file, CpuzShellcode, sizeof(CpuzShellcode), &io, nullptr)) {
+    if(!WriteFile(file, CpuzDriverFile, sizeof(CpuzDriverFile), &io, nullptr)) {
       CloseHandle(file);
       return false;
     }
